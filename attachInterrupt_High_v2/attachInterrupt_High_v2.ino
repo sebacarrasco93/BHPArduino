@@ -26,13 +26,14 @@ void setup() {
   pinMode(RELAY_ENTRADA, INPUT_PULLDOWN);
   pinMode(RELAY_SALIDA, INPUT_PULLDOWN);
 
-  // attachInterrupt(RELAY_ENTRADA, buscarSiHayEntrada, FALLING);
-  // attachInterrupt(RELAY_ENTRADA, buscarSiHayEntrada, RISING);
+  pinMode(BOTON_ENTRADA, OUTPUT);
+  pinMode(BOTON_SALIDA, OUTPUT);
+
   attachInterrupt(digitalPinToInterrupt(RELAY_ENTRADA), buscarSiHayEntrada, RISING);
   attachInterrupt(digitalPinToInterrupt(RELAY_SALIDA), buscarSiHaySalida, RISING);
 
-  pinMode(BOTON_ENTRADA, OUTPUT);
-  pinMode(BOTON_SALIDA, OUTPUT);
+  digitalWrite(BOTON_ENTRADA, LOW);
+  digitalWrite(BOTON_SALIDA, LOW);
 }
 
 // void contadorDeTiempo() {
@@ -78,7 +79,7 @@ void buscarSiHaySalida() {
       Serial.print(cuentaSalidas);
       Serial.println();
       digitalWrite(BOTON_SALIDA, HIGH);
-      delay(10);
+      delay(100);
       digitalWrite(BOTON_SALIDA, LOW);
       Serial.println("Se soltó el botón de salida");
       delay(DELAY_ESPERA_SALIDA);
