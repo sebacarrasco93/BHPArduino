@@ -32,8 +32,9 @@ void detectIn() {
   buttonIn.update();
   if (buttonIn.fell()) {
      showMessage("In marked!");
-     triggerRelay();
+     triggerRelayIn();
      delay(MS_DELAY_THROTTLE);
+     showMessage("Unlocked");
    }
 }
 
@@ -43,10 +44,11 @@ void detectOut() {
      showMessage("Out marked!");
      triggerRelayOut();
      delay(MS_DELAY_THROTTLE);
+     showMessage("Unlocked");
    }
 }
 
-void triggerRelay() {
+void triggerRelayIn() {
   digitalWrite(PIN_RELAY_IN, HIGH);
   delay(MS_DELAY_GENERAL);
   digitalWrite(PIN_RELAY_IN, LOW);
