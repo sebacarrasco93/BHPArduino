@@ -7,25 +7,24 @@
 
 const bool DEBUG = true;
 
-const int BOTON_PIN_ENTRADA = 23;
-const int BOTON_PIN_SALIDA = 22;
+const int PIN_BUTTON_IN = 18;
+const int PIN_BUTTON_OUT = 19;
 
-const int RELAY_ENTRADA = 18;
-const int RELAY_SALIDA = 19;
+const int PIN_RELAY_IN = 22;
+const int PIN_RELAY_OUT = 23;
 
-const int ESPERA_MS_ENTRADA_DESPUES = 1250;
-const int ESPERA_MS_SALIDA_DESPUES = 1250;
+const int MS_DELAY_IN = 1250;
+const int MS_DELAY_OUT = 1250;
 
-
-Throttle botonEntrada = Throttle(BOTON_PIN_ENTRADA, INPUT_PULLUP);
-Throttle botonSalida = Throttle(BOTON_PIN_SALIDA, INPUT_PULLUP);
+Throttle buttonIn = Throttle(PIN_BUTTON_IN, INPUT_PULLUP);
+Throttle buttonOut = Throttle(PIN_BUTTON_OUT, INPUT_PULLUP);
 
 void setup() {
   Serial.begin(115200);
-  showMessage("Iniciando...");
+  showMessage("Starting CEPBoard...");
   
-  pinMode(RELAY_ENTRADA, OUTPUT);
-  pinMode(RELAY_SALIDA, OUTPUT);
+  pinMode(PIN_RELAY_IN, OUTPUT);
+  pinMode(PIN_RELAY_OUT, OUTPUT);
 }
 
 void showMessage(char *message) {
@@ -34,37 +33,37 @@ void showMessage(char *message) {
   }
 }
 
-void detectarEntrada() {
-  botonEntrada.update();
-  if (botonEntrada.fell()) {
-     showMessage("Se marcó la entrada!");
+void detectIn() {
+  buttonIn.update();
+  if (buttonIn.fell()) {
+     showMessage("In marked!");
      activarRelayEntrada();
-     delay(ESPERA_MS_ENTRADA_DESPUES);
+     delay(MS_DELAY_IN);
    }
 }
 
-void detectarSalida() {
-  botonSalida.update();
-  if (botonSalida.fell()) {
-     showMessage("Se marcó la salida!");
+void detectOut() {
+  buttonOut.update();
+  if (buttonOut.fell()) {
+     showMessage("Out marked!");
      activarRelaySalida();
-     delay(ESPERA_MS_SALIDA_DESPUES);
+     delay(MS_DELAY_OUT);
    }
 }
 
 void activarRelayEntrada() {
-  digitalWrite(RELAY_ENTRADA, HIGH);
+  digitalWrite(PIN_RELAY_IN, HIGH);
   delay(500);
-  digitalWrite(RELAY_ENTRADA, LOW);
+  digitalWrite(PIN_RELAY_IN, LOW);
 }
 
 void activarRelaySalida() {
-  digitalWrite(RELAY_SALIDA, HIGH);
+  digitalWrite(PIN_RELAY_OUT, HIGH);
   delay(500);
-  digitalWrite(RELAY_SALIDA, LOW);
+  digitalWrite(PIN_RELAY_OUT, LOW);
 }
 
 void loop() {
-   detectarEntrada();
-   detectarSalida();
+  detectIn();
+  detectOut();
 }
