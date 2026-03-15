@@ -1,6 +1,3 @@
-// CEPBoard v2.0
-// Throttle library: https://github.com/Gruppio/Throttle
-
 #include <Throttle.h>
 
 #define DEBUG 1
@@ -12,90 +9,87 @@ const int PIN_RELAY_IN  = 22;
 const int PIN_RELAY_OUT = 23;
 
 const int MS_DELAY_THROTTLE = 1250;
-const int MS_DELAY_GENERAL  = 500;
+const int MS_RELAY_PULSE = 500;
 
-Throttle buttonIn(PIN_BUTTON_IN, INPUT_PULLUP);
-Throttle buttonOut(PIN_BUTTON_OUT, INPUT_PULLUP);
+struct Control {
+  Throttle button;
+  int relayPin;
+  const char* name;
+  unsigned long lockUntil;
+  unsigned long relayUntil;
+  bool wasLocked;
+  bool relayActive;
+};
 
-unsigned long lockUntilIn  = 0;
-unsigned long lockUntilOut = 0;
+Control controls[] = {
+  { Throttle(PIN_BUTTON_IN, INPUT_PULLUP),  PIN_RELAY_IN,  "In",  0, 0, false, false },
+  { Throttle(PIN_BUTTON_OUT, INPUT_PULLUP), PIN_RELAY_OUT, "Out", 0, 0, false, false }
+};
+
+const int CONTROL_COUNT = sizeof(controls) / sizeof(controls[0]);
 
 void start();
-
-void detectIn();
-void detectOut();
-
-void executeAndLock(const char* action, void (*func)(), unsigned long &lockVar);
-
-void triggerRelayIn();
-void triggerRelayOut();
-
+void processControl(Control &c);
+void updateRelay(Control &c);
 void showMessage(const char* message);
 
 void setup() {
-
   Serial.begin(115200);
 
   start();
 
-  pinMode(PIN_RELAY_IN, OUTPUT);
-  pinMode(PIN_RELAY_OUT, OUTPUT);
-
-  digitalWrite(PIN_RELAY_IN, LOW);
-  digitalWrite(PIN_RELAY_OUT, LOW);
+  for (int i = 0; i < CONTROL_COUNT; i++) {
+    pinMode(controls[i].relayPin, OUTPUT);
+    digitalWrite(controls[i].relayPin, LOW);
+  }
 }
 
 void loop() {
 
-  detectIn();
-  detectOut();
-}
+  for (int i = 0; i < CONTROL_COUNT; i++) {
+    processControl(controls[i]);
+  }
 
-void detectIn() {
-
-  buttonIn.update();
-
-  if (buttonIn.fell()) {
-    executeAndLock("In", triggerRelayIn, lockUntilIn);
+  for (int i = 0; i < CONTROL_COUNT; i++) {
+    updateRelay(controls[i]);
   }
 }
 
-void detectOut() {
+void processControl(Control &c) {
+  c.button.update();
 
-  buttonOut.update();
-
-  if (buttonOut.fell()) {
-    executeAndLock("Out", triggerRelayOut, lockUntilOut);
+  if (c.wasLocked && millis() >= c.lockUntil) {
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s Unlocked", c.name);
+    showMessage(buffer);
+    c.wasLocked = false;
   }
-}
 
-void executeAndLock(const char* action, void (*func)(), unsigned long &lockVar) {
-
-  if (millis() < lockVar) {
+  if (millis() < c.lockUntil) {
     return;
   }
 
-  char buffer[32];
+  if (c.button.fell()) {
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s detected - Locked", c.name);
+    showMessage(buffer);
 
-  snprintf(buffer, sizeof(buffer), "%s detected - Locked", action);
+    digitalWrite(c.relayPin, HIGH);
 
-  showMessage(buffer);
+    c.relayActive = true;
+    c.relayUntil = millis() + MS_RELAY_PULSE;
 
-  func();
-
-  lockVar = millis() + MS_DELAY_THROTTLE;
+    c.lockUntil = millis() + MS_DELAY_THROTTLE;
+    c.wasLocked = true;
+  }
 }
 
-void triggerRelayIn() {
-  digitalWrite(PIN_RELAY_IN, HIGH);
-  delay(MS_DELAY_GENERAL);
-  digitalWrite(PIN_RELAY_IN, LOW);
-}
+void updateRelay(Control &c) {
 
-void triggerRelayOut() {
-  digitalWrite(PIN_RELAY_OUT, HIGH);
-  delay(MS_DELAY_GENERAL);
-  digitalWrite(PIN_RELAY_OUT, LOW);
+  if (c.relayActive && millis() >= c.relayUntil) {
+    digitalWrite(c.relayPin, LOW);
+    c.relayActive = false;
+  }
 }
 
 void start() {
@@ -106,11 +100,8 @@ void start() {
   Serial.println("");
 }
 
-
 void showMessage(const char* message) {
-
-#if DEBUG
-  Serial.println(message);
-#endif
-
+  #if DEBUG
+    Serial.println(message);
+  #endif
 }
