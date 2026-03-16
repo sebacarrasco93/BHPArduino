@@ -2,14 +2,16 @@
 
 #define DEBUG 1
 
-const int PIN_BUTTON_IN  = 18;
-const int PIN_BUTTON_OUT = 19;
+const int PIN_BUTTON_IN  = 26;
+const int PIN_BUTTON_OUT = 27;
 
-const int PIN_RELAY_IN  = 22;
-const int PIN_RELAY_OUT = 23;
+const int PIN_RELAY_IN  = 32;
+const int PIN_RELAY_OUT = 33;
 
 const int MS_DELAY_THROTTLE = 1250;
 const int MS_RELAY_PULSE = 500;
+
+const int PIN_INTERNAL_LED = 2;
 
 struct Control {
   Throttle button;
@@ -34,9 +36,11 @@ void updateRelay(Control &c);
 void showMessage(const char* message);
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(921600);
 
   start();
+
+  pinMode(PIN_INTERNAL_LED, OUTPUT);
 
   for (int i = 0; i < CONTROL_COUNT; i++) {
     pinMode(controls[i].relayPin, OUTPUT);
@@ -45,7 +49,6 @@ void setup() {
 }
 
 void loop() {
-
   for (int i = 0; i < CONTROL_COUNT; i++) {
     processControl(controls[i]);
   }
@@ -63,6 +66,7 @@ void processControl(Control &c) {
     snprintf(buffer, sizeof(buffer), "%s Unlocked", c.name);
     showMessage(buffer);
     c.wasLocked = false;
+    digitalWrite(PIN_INTERNAL_LED, LOW);
   }
 
   if (millis() < c.lockUntil) {
@@ -71,7 +75,7 @@ void processControl(Control &c) {
 
   if (c.button.fell()) {
     char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%s detected - Locked", c.name);
+    snprintf(buffer, sizeof(buffer), "%s Locked (detected)", c.name);
     showMessage(buffer);
 
     digitalWrite(c.relayPin, HIGH);
@@ -81,11 +85,11 @@ void processControl(Control &c) {
 
     c.lockUntil = millis() + MS_DELAY_THROTTLE;
     c.wasLocked = true;
+    digitalWrite(PIN_INTERNAL_LED, HIGH);
   }
 }
 
 void updateRelay(Control &c) {
-
   if (c.relayActive && millis() >= c.relayUntil) {
     digitalWrite(c.relayPin, LOW);
     c.relayActive = false;
